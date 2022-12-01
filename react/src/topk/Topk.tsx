@@ -16,19 +16,18 @@ import {
 } from "../utils/rangeStrArrConversion";
 
 /**
- * Create an array of ranges to display in the select. Each range is
- * represented by a string of the form "start-end", where start is the first
+ * Create an html select with each option being a string representation of a
+ * range of numbers that takes the form "start-end", where start is the first
  * number in the range and end is the last number in the range. E.g. if
  * largestNumber=4, smallestNumber=0, and numValsInRange=2, then the ranges array
  * will be ["0-1", "2-3", "4"].
  * @param {number} smallestNumber - Smallest number in the range.
- * @param {number} largestNumber Largest number included in the ranges.
- * @param {Array<number>} currentRangeArr Current range selected represented as an array of numbers.
- * @param {function(Array<number>): void} setCurrentValue Function for setting
+ * @param {number} largestNumber - Largest number included in the ranges.
+ * @param {number[]} currentRangeArr - Current range selected represented as an array of numbers.
+ * @param {function(number[]): void} setCurrentValue - Function for setting
  * the selected range.
- * @param {number} numValsInRange The max number of values in each range.
- * @param {number} id The id of the select.
- * // Returns an html select element.
+ * @param {number} numValsInRange - The max number of values in each range.
+ * @param {number} id - The id of the select.
  * @returns Select element.
  */
 export function RangeSelector({
@@ -45,7 +44,7 @@ export function RangeSelector({
   setCurrentValue: (rangeArr: number[]) => void;
   numValsInRange: number;
   id: string;
-}) {
+}): JSX.Element {
   // Convert the current range to a string.
   const currentRange: string = rangeArrToString(currentRangeArr);
 
@@ -75,6 +74,17 @@ export function RangeSelector({
   );
 }
 
+/**
+ * Create an html select with each option corresponding to a single number in a
+ * range of numbers.
+ * @param {number} smallestNumber - Smallest number in the range.
+ * @param {number} largestNumber - Largest number included in the ranges.
+ * @param {number} currentValue - Current value selected.
+ * @param {function(number): void} setCurrentValue - Function for setting
+ * the selected value.
+ * @param {number} id - The id of the select.
+ * @returns Select element.
+ */
 export function NumberSelector({
   smallestNumber = 0,
   largestNumber,
@@ -109,10 +119,10 @@ export function NumberSelector({
 /**
  * Get the selected activations
  *
- * @param activations All activations [ tokens x layers x neurons ]
- * @param layerNumber
- * @param neuronStartNumber
- * @param neuronEndNumber
+ * @param {Tensor3D} activations - Activations for the selected sample [ tokens x layers x neurons ]
+ * @param {number} layerNumber - Selected layer number
+ * @param {number} neuronStartNumber - First selected neuron number
+ * @param {number} neuronEndNumber - Last selected neuron number
  * @returns Selected activations [ neurons x tokens ]. This form is required for
  * topk which can only calculate the topk over the final dimension
  */
@@ -132,8 +142,8 @@ export function getSelectedActivations(
   return currentActivations; // [neurons x tokens]
 }
 
-// Styling for each cell in the table
 function tdStyle(value: number, maxTokenLength: number): React.CSSProperties {
+  // Styling for each cell in the table
   // The background color is determined by the activation value
   const backgroundColor = getTokenBackgroundColor(value, 0, 1).toRgbString();
   return {
@@ -143,6 +153,18 @@ function tdStyle(value: number, maxTokenLength: number): React.CSSProperties {
   };
 }
 
+/**
+ * Create a table with the topk and bottomk tokens for each neuron in the selected range.
+ * @param {number[][]} topkActivations - Topk activations for the selected
+ * sample and neuron numbers [ tokens x neurons ]
+ * @param {number[][]} bottomkActivations - Bottomk activations
+ * @param {string[][]} topktokens - Topk tokens for the selected sample and neuron numbers [ tokens x neurons ]
+ * @param {string[][]} bottomktokens - Bottomk tokens
+ * @param {number} maxTokenLength - The number of chars in the longest token
+ * @param {numberp[]} neuronNumbers - The neuron numbers we wish to display
+ * (each will have its own column)
+ * @returns {JSX.Element} A react-grid-system Container element containing the table.
+ */
 export function TopBottomKTable({
   topkActivations,
   bottomkActivations,
@@ -221,9 +243,10 @@ export function TopBottomKTable({
 }
 
 /**
- * Show activations (colored by intensity) for each token.
+ * Show the topk and bottomk tokens for each neuron/directions.
  *
- * Includes drop-downs for layer and neuron numbers.
+ * Includes drop-downs for k, layer and neuron numbers, and the number of
+ * columns to show (representing the neurons or directions).
  */
 export function Topk({
   tokens,
@@ -231,8 +254,8 @@ export function Topk({
   k = 5,
   firstDimensionName = "Sample",
   secondDimensionName = "Layer",
-  thirdDimensionName = "Neuron"
-}: TopkProps) {
+  thirdDimensionName = "Neuron" // Note that we simply use neuron as variable names throughout this file
+}: TopkProps): JSX.Element {
   const activationsTensors = activations.map((sampleActivations) => {
     return tensor<Rank.R3>(sampleActivations);
   });
@@ -244,6 +267,7 @@ export function Topk({
   const [sampleNumber, setSampleNumber] = useState<number>(0);
   const [layerNumber, setLayerNumber] = useState<number>(0);
   const [colsToShow, setColsToShow] = useState<number>(5);
+  // const [k, setK] = useState<number>(defaultK);
   const [neuronNumbers, setNeuronNumbers] = useState<number[]>(
     numberOfSamples > 1 ? [...Array(colsToShow).keys()] : [0]
   );
@@ -347,16 +371,34 @@ export function Topk({
           </Row>
         </Col>
         <Col>
-          <label htmlFor="visibleCols-selector" style={{ marginRight: 15 }}>
-            {thirdDimensionName}s to show:
-          </label>
-          <NumberSelector
-            id="visible-cols-selector"
-            smallestNumber={1}
-            largestNumber={numberOfNeurons}
-            currentValue={colsToShow}
-            setCurrentValue={setColsToShow}
-          />
+          <Row>
+            <Col>
+              <label htmlFor="visibleCols-selector" style={{ marginRight: 15 }}>
+                {thirdDimensionName}s to show:
+              </label>
+              <NumberSelector
+                id="visible-cols-selector"
+                smallestNumber={1}
+                largestNumber={numberOfNeurons}
+                currentValue={colsToShow}
+                setCurrentValue={setColsToShow}
+              />
+            </Col>
+          </Row>
+          {/* <Row>
+            <Col>
+              <label htmlFor="k-selector" style={{ marginRight: 15 }}>
+                k:
+              </label>
+              <NumberSelector
+                id="k-selector"
+                smallestNumber={1}
+                largestNumber={20}
+                currentValue={colsToShow}
+                setCurrentValue={setColsToShow}
+              />
+            </Col>
+          </Row> */}
         </Col>
       </Row>
       <Row style={{ marginTop: 15 }}>
