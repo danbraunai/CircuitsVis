@@ -5,3 +5,4 @@ export { TextNeuronActivations } from "./activations/TextNeuronActivations";
 export { ColoredTokens } from "./tokens/ColoredTokens";
 export { AttentionPattern } from "./attention/AttentionPattern";
 export { Topk } from "./topk/Topk";
+export { Samples } from "./samples/Samples";
