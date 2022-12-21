@@ -1,4 +1,5 @@
 # Distribution/packaging
+*DS_Store
 *.egg-info/
 .eggs/
 build/
